@@ -2,224 +2,221 @@ from data_processing.chunking import chunk_text
 
 from retrieval.bm25_retriever import BM25Retriever
 from retrieval.extractive_selector import extract_context
-from retrieval.cite_selector import select_top_cited_passages
+from retrieval.cite_selector import select_passages_with_coverage
 
-from summerization.chunk_summerizer import summarize_chunk
+from summerization.llama_summarizer import summarize_chunk
 from summerization.support_pipeline import support_summary
 from summerization.replace_pipeline import replace_summary
 from summerization.hierarchical_merge import hierarchical_merge
 
-# ==========================================
 
+# ==========================================
 # CONFIGURATION
-
 # ==========================================
 
-METHOD = "cite"
-
+METHOD = "retrieve"
 # Options:
-
 # "extract"
-
 # "retrieve"
-
 # "cite"
 
 INTEGRATION = "support"
-
 # Options:
-
 # "support"
-
 # "replace"
+
 
 def main():
 
-
     print("===== LONG DOCUMENT SUMMARIZATION =====\n")
 
-document = """
-Our environment is made up of everything living and non-living around us—plants, animals, humans, water, soil, air, and even buildings.
-Both natural and man-made elements are part of the environment.
-The environment is very important because it provides us with everything necessary for survival, like clean air, safe water, fertile land, and biodiversity.
-Sadly, pollution, deforestation, and overuse of resources are harming the environment.
-This leads to problems like climate change, water shortages, and extinction of species.
-Everyone, especially students, should help protect the environment by planting trees, avoiding plastic, saving water and electricity, and joining awareness campaigns like World Environment Day.
-By caring for our surroundings, we protect our health and the future of our planet.
-"""
+    document = """
+    Our environment is made up of everything living and non-living around us—plants, animals, humans, water, soil, air, and even buildings.
+    Both natural and man-made elements are part of the environment.
+    The environment is very important because it provides us with everything necessary for survival, like clean air, safe water, fertile land, and biodiversity.
+    Sadly, pollution, deforestation, and overuse of resources are harming the environment.
+    This leads to problems like climate change, water shortages, and extinction of species.
+    Everyone, especially students, should help protect the environment by planting trees, avoiding plastic, saving water and electricity, and joining awareness campaigns like World Environment Day.
+    By caring for our surroundings, we protect our health and the future of our planet.
+    """
 
-print("Document Loaded\n")
+    print("Document Loaded\n")
 
-# ==========================================
-# CHUNKING
-# ==========================================
+    # ==========================================
+    # CHUNKING
+    # ==========================================
 
-chunks = chunk_text(
-    document,
-    max_words=75
-)
-
-print(f"Number of Chunks: {len(chunks)}\n")
-
-# ==========================================
-# CHUNK SUMMARIZATION
-# ==========================================
-
-summaries = []
-
-for chunk in chunks:
-
-    summary = summarize_chunk(chunk)
-
-    summaries.append(summary)
-
-print("Chunk Summaries Generated\n")
-
-# ==========================================
-# CONTEXT SELECTION
-# ==========================================
-
-enhanced_summaries = []
-
-if METHOD == "extract":
-
-    print("Using EXTRACT method\n")
-
-    contexts = extract_context(
+    chunks = chunk_text(
         document,
-        k=3
+        max_words=75
     )
 
-    for summary in summaries:
+    print(f"Number of Chunks: {len(chunks)}\n")
 
-        if INTEGRATION == "support":
+    # ==========================================
+    # CHUNK SUMMARIZATION
+    # ==========================================
 
-            enhanced_summary = support_summary(
-                summary,
-                contexts
+    summaries = []
+
+    for chunk in chunks:
+
+        summary = summarize_chunk(chunk)
+
+        summaries.append(summary)
+
+    print("Chunk Summaries Generated\n")
+
+    # ==========================================
+    # CONTEXT SELECTION
+    # ==========================================
+
+    enhanced_summaries = []
+
+    if METHOD == "extract":
+
+        print("Using EXTRACT method\n")
+
+        contexts = extract_context(
+            document,
+            k=3
+        )
+
+        for summary in summaries:
+
+            if INTEGRATION == "support":
+
+                enhanced_summary = support_summary(
+                    summary,
+                    contexts
+                )
+
+            else:
+
+                enhanced_summary = replace_summary(
+                    summary,
+                    contexts
+                )
+
+            enhanced_summaries.append(
+                enhanced_summary
             )
 
-        else:
+    elif METHOD == "retrieve":
 
-            enhanced_summary = replace_summary(
+        print("Using RETRIEVE method\n")
+
+        retriever = BM25Retriever(chunks)
+
+        for summary in summaries:
+
+            contexts = retriever.retrieve(
                 summary,
-                contexts
+                top_k=2
             )
 
-        enhanced_summaries.append(
-            enhanced_summary
-        )
+            if INTEGRATION == "support":
 
-elif METHOD == "retrieve":
+                enhanced_summary = support_summary(
+                    summary,
+                    contexts
+                )
 
-    print("Using RETRIEVE method\n")
+            else:
 
-    retriever = BM25Retriever(chunks)
+                enhanced_summary = replace_summary(
+                    summary,
+                    contexts
+                )
 
-    for summary in summaries:
-
-        contexts = retriever.retrieve(
-            summary,
-            top_k=2
-        )
-
-        if INTEGRATION == "support":
-
-            enhanced_summary = support_summary(
-                summary,
-                contexts
+            enhanced_summaries.append(
+                enhanced_summary
             )
 
-        else:
+    elif METHOD == "cite":
 
-            enhanced_summary = replace_summary(
-                summary,
-                contexts
+        print("Using CITE method\n")
+
+        attr_texts = []
+
+        for i, chunk in enumerate(chunks):
+
+            attr_texts.append(
+                {
+                    "label": f"P{i+1}",
+                    "text": chunk,
+                    "position": i
+                }
             )
 
-        enhanced_summaries.append(
-            enhanced_summary
+        # Dummy cited response
+        response = ""
+
+        for i in range(len(chunks)):
+
+            response += (
+                f"Information from chunk {i+1} "
+                f"[P{i+1}]. "
+            )
+
+        selected_passages = select_passages_with_coverage(
+            attr_texts,
+            response,
+            k=2
         )
 
-elif METHOD == "cite":
+        contexts = []
 
-    print("Using CITE method\n")
+        for passage in selected_passages:
 
-    attr_texts = []
+            contexts.append(
+                passage["text"]
+            )
 
-    for i, chunk in enumerate(chunks):
+        for summary in summaries:
 
-        attr_texts.append(
-            {
-                "label": f"P{i+1}",
-                "text": chunk
-            }
+            if INTEGRATION == "support":
+
+                enhanced_summary = support_summary(
+                    summary,
+                    contexts
+                )
+
+            else:
+
+                enhanced_summary = replace_summary(
+                    summary,
+                    contexts
+                )
+
+            enhanced_summaries.append(
+                enhanced_summary
+            )
+
+    else:
+
+        raise ValueError(
+            "Invalid METHOD selected."
         )
 
-    response = ""
+    print("Context Selection Complete\n")
 
-    for i in range(len(chunks)):
+    # ==========================================
+    # HIERARCHICAL MERGE
+    # ==========================================
 
-        response += (
-            f"Information from chunk {i+1} "
-            f"[P{i+1}]. "
-        )
-
-    selected_passages = select_top_cited_passages(
-        attr_texts,
-        response,
-        k=2
+    final_summary = hierarchical_merge(
+        enhanced_summaries
     )
 
-    contexts = []
+    # ==========================================
+    # OUTPUT
+    # ==========================================
 
-    for passage in selected_passages:
+    print("\n===== FINAL SUMMARY =====\n")
 
-        contexts.append(
-            passage["text"]
-        )
+    print(final_summary)
 
-    for summary in summaries:
 
-        if INTEGRATION == "support":
-
-            enhanced_summary = support_summary(
-                summary,
-                contexts
-            )
-
-        else:
-
-            enhanced_summary = replace_summary(
-                summary,
-                contexts
-            )
-
-        enhanced_summaries.append(
-            enhanced_summary
-        )
-
-else:
-
-    raise ValueError(
-        "Invalid METHOD selected."
-    )
-
-print("Context Selection Complete\n")
-
-# ==========================================
-# HIERARCHICAL MERGE
-# ==========================================
-
-final_summary = hierarchical_merge(
-    enhanced_summaries
-)
-
-# ==========================================
-# OUTPUT
-# ==========================================
-
-print("\n===== FINAL SUMMARY =====\n")
-
-print(final_summary)
-
+if __name__ == "__main__":
+    main()
