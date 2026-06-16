@@ -9,7 +9,7 @@ SUMMARY:
 SUPPORTING CONTEXT:
 {context}
 """
-summary = "Alice visited Paris"
+'''summary = "Alice visited Paris"
 
 contexts = [
     "Alice went to Paris",
@@ -17,3 +17,4 @@ contexts = [
 ]
 
 print(support_summary(summary, contexts))
+'''

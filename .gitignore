@@ -2,6 +2,7 @@ venv/
 testenv/
 __pycache__/
 *.pyc
+.env
 
 data/raw/
 data/processed/

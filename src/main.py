@@ -1,63 +1,225 @@
 from data_processing.chunking import chunk_text
+
 from retrieval.bm25_retriever import BM25Retriever
+from retrieval.extractive_selector import extract_context
+from retrieval.cite_selector import select_top_cited_passages
+
+from summerization.chunk_summerizer import summarize_chunk
 from summerization.support_pipeline import support_summary
 from summerization.replace_pipeline import replace_summary
 from summerization.hierarchical_merge import hierarchical_merge
 
+# ==========================================
+
+# CONFIGURATION
+
+# ==========================================
+
+METHOD = "cite"
+
+# Options:
+
+# "extract"
+
+# "retrieve"
+
+# "cite"
+
+INTEGRATION = "support"
+
+# Options:
+
+# "support"
+
+# "replace"
 
 def main():
 
+
     print("===== LONG DOCUMENT SUMMARIZATION =====\n")
 
-    # Step 1: Sample document
-    document = """
-    Alice went to Paris and visited the Eiffel Tower.
-    She enjoyed French food and museums.
-    Bob bought a new laptop for college.
-    The weather was sunny during the trip.
-    """
+document = """
+Our environment is made up of everything living and non-living around us—plants, animals, humans, water, soil, air, and even buildings.
+Both natural and man-made elements are part of the environment.
+The environment is very important because it provides us with everything necessary for survival, like clean air, safe water, fertile land, and biodiversity.
+Sadly, pollution, deforestation, and overuse of resources are harming the environment.
+This leads to problems like climate change, water shortages, and extinction of species.
+Everyone, especially students, should help protect the environment by planting trees, avoiding plastic, saving water and electricity, and joining awareness campaigns like World Environment Day.
+By caring for our surroundings, we protect our health and the future of our planet.
+"""
 
-    print("Document Loaded\n")
+print("Document Loaded\n")
 
-    # Step 2: Chunking
-    chunks = chunk_text(document, chunk_size=10)
+# ==========================================
+# CHUNKING
+# ==========================================
 
-    print(f"Number of Chunks: {len(chunks)}\n")
+chunks = chunk_text(
+    document,
+    max_words=75
+)
 
-    # Step 3: Placeholder summaries
-    summaries = []
+print(f"Number of Chunks: {len(chunks)}\n")
 
-    for i, chunk in enumerate(chunks):
-        summaries.append(f"Summary of chunk {i+1}")
+# ==========================================
+# CHUNK SUMMARIZATION
+# ==========================================
 
-    print("Chunk Summaries Generated\n")
+summaries = []
 
-    # Step 4: BM25 Retrieval
-    retriever = BM25Retriever(chunks)
+for chunk in chunks:
 
-    enhanced_summaries = []
+    summary = summarize_chunk(chunk)
+
+    summaries.append(summary)
+
+print("Chunk Summaries Generated\n")
+
+# ==========================================
+# CONTEXT SELECTION
+# ==========================================
+
+enhanced_summaries = []
+
+if METHOD == "extract":
+
+    print("Using EXTRACT method\n")
+
+    contexts = extract_context(
+        document,
+        k=3
+    )
 
     for summary in summaries:
 
-        contexts = retriever.retrieve(summary, top_k=2)
+        if INTEGRATION == "support":
 
-        enhanced_summary = support_summary(
-            summary,
-            contexts
+            enhanced_summary = support_summary(
+                summary,
+                contexts
+            )
+
+        else:
+
+            enhanced_summary = replace_summary(
+                summary,
+                contexts
+            )
+
+        enhanced_summaries.append(
+            enhanced_summary
         )
 
-        enhanced_summaries.append(enhanced_summary)
+elif METHOD == "retrieve":
 
-    print("Context Retrieved and Support Applied\n")
+    print("Using RETRIEVE method\n")
 
-    # Step 5: Hierarchical Merge
-    final_summary = hierarchical_merge(
-        enhanced_summaries
+    retriever = BM25Retriever(chunks)
+
+    for summary in summaries:
+
+        contexts = retriever.retrieve(
+            summary,
+            top_k=2
+        )
+
+        if INTEGRATION == "support":
+
+            enhanced_summary = support_summary(
+                summary,
+                contexts
+            )
+
+        else:
+
+            enhanced_summary = replace_summary(
+                summary,
+                contexts
+            )
+
+        enhanced_summaries.append(
+            enhanced_summary
+        )
+
+elif METHOD == "cite":
+
+    print("Using CITE method\n")
+
+    attr_texts = []
+
+    for i, chunk in enumerate(chunks):
+
+        attr_texts.append(
+            {
+                "label": f"P{i+1}",
+                "text": chunk
+            }
+        )
+
+    response = ""
+
+    for i in range(len(chunks)):
+
+        response += (
+            f"Information from chunk {i+1} "
+            f"[P{i+1}]. "
+        )
+
+    selected_passages = select_top_cited_passages(
+        attr_texts,
+        response,
+        k=2
     )
 
-    print("\n===== FINAL SUMMARY =====\n")
-    print(final_summary)
+    contexts = []
 
+    for passage in selected_passages:
 
-if __name__ == "__main__":
-    main()
+        contexts.append(
+            passage["text"]
+        )
+
+    for summary in summaries:
+
+        if INTEGRATION == "support":
+
+            enhanced_summary = support_summary(
+                summary,
+                contexts
+            )
+
+        else:
+
+            enhanced_summary = replace_summary(
+                summary,
+                contexts
+            )
+
+        enhanced_summaries.append(
+            enhanced_summary
+        )
+
+else:
+
+    raise ValueError(
+        "Invalid METHOD selected."
+    )
+
+print("Context Selection Complete\n")
+
+# ==========================================
+# HIERARCHICAL MERGE
+# ==========================================
+
+final_summary = hierarchical_merge(
+    enhanced_summaries
+)
+
+# ==========================================
+# OUTPUT
+# ==========================================
+
+print("\n===== FINAL SUMMARY =====\n")
+
+print(final_summary)
+

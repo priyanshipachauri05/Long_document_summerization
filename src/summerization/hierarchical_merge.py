@@ -1,3 +1,4 @@
+from summerization.chunk_summerizer import summarize_chunk
 def group_summaries(summaries, group_size=2):
     groups = []
 
@@ -8,13 +9,14 @@ def group_summaries(summaries, group_size=2):
 
 
 def merge_group(group):
-    """
-    Temporary merge function.
-    Later this will call an LLM to generate
-    a merged summary.
-    """
 
-    return " ".join(group)
+    combined_text = " ".join(group)
+
+    merged_summary = summarize_chunk(
+        combined_text
+    )
+
+    return merged_summary
 
 
 def hierarchical_merge(summaries):
@@ -30,32 +32,24 @@ def hierarchical_merge(summaries):
 
         merged_summaries = []
 
+
         for group in groups:
+
+            print("\nGROUP TO MERGE:")
+            for summary in group:
+                print("-", summary)
 
             merged_summary = merge_group(group)
 
+            print("\nMERGED RESULT:")
+            print(merged_summary)
+
             merged_summaries.append(
                 merged_summary
-            )
+    )
 
         summaries = merged_summaries
 
         level += 1
 
     return summaries[0]
-if __name__ == "__main__":
-
-    summaries = [
-        "Summary 1",
-        "Summary 2",
-        "Summary 3",
-        "Summary 4",
-        "Summary 5"
-    ]
-
-    final_summary = hierarchical_merge(
-        summaries
-    )
-
-    print("\nFinal Summary:")
-    print(final_summary)
