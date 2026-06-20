@@ -1,10 +1,7 @@
 def replace_summary(summary, retrieved_contexts):
-    return " ".join(retrieved_contexts)
-summary = "Alice visited Paris"
 
-contexts = [
-    "Alice went to Paris",
-    "Alice enjoyed French food"
-]
+    replaced_context = " ".join(
+        retrieved_contexts
+    )
 
-print(replace_summary(summary, contexts))
+    return replaced_context

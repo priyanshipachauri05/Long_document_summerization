@@ -1,4 +1,4 @@
-from summerization.chunk_summerizer import summarize_chunk
+from summerization.llama_summarizer import summarize_chunk
 def group_summaries(summaries, group_size=2):
     groups = []
 
