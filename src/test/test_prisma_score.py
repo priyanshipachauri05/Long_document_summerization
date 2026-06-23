@@ -11,7 +11,7 @@ evaluator = PRISMAEvaluator(api_key)
 
 generated_summary = """
 John travelled to Paris.
-He bought a souvenir.
+John bought a souvenir.
 """
 
 reference_summary = """

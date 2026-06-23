@@ -1,9 +1,8 @@
-# evaluation/prisma_prompts.py
-
 FACT_EXTRACTION_PROMPT = """
-You are an expert at decomposing summaries into atomic facts.
+You are an expert at extracting atomic facts.
 
 An atomic fact contains exactly ONE piece of information.
+
 Example:
 
 Summary:
@@ -16,43 +15,43 @@ John travelled with Mary.
 John visited the Eiffel Tower.
 Mary visited the Eiffel Tower.
 
--------------------------
-Summary:
-{summary}
+----------------------------------------
 
-Extract ALL atomic facts.
-
-
+Now extract ALL atomic facts from the following summary.
 
 Rules:
-1. Each fact must contain exactly ONE piece of information.
-2. Preserve every factual statement.
-3. Split compound sentences into separate facts.
-4. Do not infer or add information.
-5. Do not explain anything.
-
-Return ONLY the facts.
-One fact per line.
-Do not number them.
+- One fact per line.
+- Split compound statements into multiple facts.
+- Do NOT infer new information.
+- Do NOT omit any fact.
+- Return ONLY the facts.
 
 Summary:
 {summary}
 """
 
-ENTAILMENT_PROMPT = """
-You are an expert in natural language inference.
 
-Determine whether the Statement is fully supported (entailed) by the Reference.
+BATCH_ENTAILMENT_PROMPT = """
+You are an expert in factual consistency evaluation.
 
-Statement:
-{statement}
-
-Reference:
+Reference Facts:
 {reference}
 
-Instructions:
-- Answer YES if the statement is completely supported.
-- Answer NO if it is partially supported, contradicted, or not mentioned.
-- Do not explain.
-- Return ONLY YES or NO.
+Generated Facts:
+{generated}
+
+For EACH generated fact, determine whether it is completely supported by the reference facts.
+
+Return ONLY valid JSON.
+
+Example:
+
+{
+  "results":[true,false,true]
+}
+
+The number of boolean values MUST equal the number of generated facts.
+
+Do not explain anything.
+Return ONLY JSON.
 """

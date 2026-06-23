@@ -1,8 +1,6 @@
-from datasets import load_dataset
+from dotenv import load_dotenv
+import os
 
-print("Loading Multi-LexSum")
+load_dotenv()
 
-dataset= load_dataset("allenai/multi_lexsum",name="v20230518",streaming=True,trust_remote_code=True)
-
-print("Dataset loaded")
-print(dataset)
+print(os.getenv("GROQ_API_KEY"))

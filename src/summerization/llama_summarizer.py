@@ -1,22 +1,32 @@
 from groq import Groq
 from dotenv import load_dotenv
+from pathlib import Path
 import os
 
-load_dotenv("src/.env",override=True)
+# ==========================================
+# LOAD ENVIRONMENT VARIABLES
+# ==========================================
 
-client = Groq(
-    api_key=os.getenv("GROQ_API_KEY")
-)
-def summarize_chunk(chunk):
+project_root = Path(__file__).resolve().parents[2]
+env_path = project_root / ".env"
 
-    prompt = f"""
-Summarize the following text in 2-3 concise sentences.
+load_dotenv(env_path, override=True)
 
-Text:
-{chunk}
+api_key = os.getenv("GROQ_API_KEY")
 
-Summary:
-"""
+if api_key is None:
+    raise ValueError(
+        f"GROQ_API_KEY not found in {env_path}"
+    )
+
+client = Groq(api_key=api_key)
+
+
+# ==========================================
+# GENERIC LLM CALL
+# ==========================================
+
+def call_llm(prompt):
 
     response = client.chat.completions.create(
         model="llama-3.1-8b-instant",
@@ -31,12 +41,62 @@ Summary:
 
     return response.choices[0].message.content.strip()
 
-if __name__=="__main__":
-    text="""Our environment is made up of everything living and non-living around us—plants, animals, humans, water, soil, air, and even buildings.
-    Both natural and man-made elements are part of the environment.
-    The environment is very important because it provides us with everything necessary for survival, like clean air, safe water, fertile land, and biodiversity.
-    Sadly, pollution, deforestation, and overuse of resources are harming the environment.
-    This leads to problems like climate change, water shortages, and extinction of species.
-    Everyone, especially students, should help protect the environment by planting trees, avoiding plastic, saving water and electricity, and joining awareness campaigns like World Environment Day.
-    By caring for our surroundings, we protect our health and the future of our planet."""
+
+# ==========================================
+# CHUNK SUMMARIZATION
+# ==========================================
+
+def summarize_chunk(chunk):
+
+    prompt = f"""
+You are an expert document summarizer.
+
+Summarize the following text into 2–3 concise sentences.
+
+Preserve all important factual information.
+
+Do not add new information.
+
+Text:
+{chunk}
+
+Summary:
+"""
+
+    return call_llm(prompt)
+
+
+# ==========================================
+# ZERO-SHOT BASELINE
+# ==========================================
+
+def zero_shot(document):
+
+    prompt = f"""
+You are an expert document summarizer.
+
+Summarize the following document into a concise summary while preserving all important information.
+
+Document:
+{document}
+
+Summary:
+"""
+
+    return call_llm(prompt)
+
+
+# ==========================================
+# TEST
+# ==========================================
+
+if __name__ == "__main__":
+
+    text = """
+    Our environment is made up of everything living and non-living around us.
+    The environment provides clean air, water and biodiversity.
+    Pollution and deforestation threaten natural resources.
+    Everyone should protect the environment.
+    """
+
     print(summarize_chunk(text))
