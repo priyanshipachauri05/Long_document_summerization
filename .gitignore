@@ -1,11 +1,20 @@
+# Environments
 venv/
-testenv/
-__pycache__/
-*.pyc
 .env
 
-data/raw/
-data/processed/
+# Model Checkpoints (Crucial to block heavy files)
+src/checkpoints/
+*.ckpt
 
-.cache/
-.ipynb_checkpoints/
+# Python execution caches
+__pycache__/
+*.pyc
+
+# Local Data and Run Folders
+src/cache/
+results/
+dataset/
+outputs/
+
+#Ignore the raw library repository copy
+AlignScore/
