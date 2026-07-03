@@ -2,11 +2,11 @@ import os
 from dotenv import load_dotenv
 import pandas as pd
 
-from evaluation.rouge_eval import RougeEvaluator
-from evaluation.bert_score_eval import BertScoreEvaluator
-from evaluation.alignscore_eval import AlignScoreEvaluator
-from evaluation.summac_eval import SummaCEvaluator
-from evaluation.prisma_eval import PRISMAEvaluator
+from src.evaluation.rouge_eval import RougeEvaluator
+from src.evaluation.bert_score_eval import BertScoreEvaluator
+from src.evaluation.alignscore_eval import AlignScoreEvaluator
+from src.evaluation.summac_eval import SummaCEvaluator
+from src.evaluation.prisma_eval import PRISMAEvaluator
 
 load_dotenv()
 api_key = os.getenv("GEMINI_API_KEY")

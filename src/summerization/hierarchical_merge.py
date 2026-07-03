@@ -1,8 +1,8 @@
-from summerization.llama_summarizer import call_llm
+from src.summerization.llama_summarizer import call_llm
 
-from retrieval.bm25_retriever import BM25Retriever
-from retrieval.extractive_selector import extract_context
-from retrieval.cite_selector import select_passages_with_coverage
+from src.retrieval.bm25_retriever import BM25Retriever
+from src.retrieval.extractive_selector import extract_context
+from src.retrieval.cite_selector import select_passages_with_coverage
 
 
 # ==========================================

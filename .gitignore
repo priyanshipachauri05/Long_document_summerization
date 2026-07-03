@@ -16,5 +16,3 @@ results/
 dataset/
 outputs/
 
-#Ignore the raw library repository copy
-AlignScore/

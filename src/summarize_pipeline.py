@@ -1,11 +1,11 @@
-from data_processing.chunking import chunk_text
+from src.data_processing.chunking import chunk_text
 
-from summerization.llama_summarizer import (
+from src.summerization.llama_summarizer import (
     summarize_chunk,
     zero_shot
 )
 
-from summerization.hierarchical_merge import (
+from src.summerization.hierarchical_merge import (
     hierarchical_merge
 )
 
