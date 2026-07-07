@@ -46,12 +46,17 @@ Return ONLY valid JSON.
 
 Example:
 
-{
-  "results":[true,false,true]
-}
+{{{{
+  "results": [true, false, true]
+}}}}
 
 The number of boolean values MUST equal the number of generated facts.
 
-Do not explain anything.
+Rules:
+- The output must contain exactly one boolean value for each generated fact.
+- Use only true or false.
+- Do not add explanations, markdown, or code fences.
+- Return ONLY the JSON object.
+
 Return ONLY JSON.
 """

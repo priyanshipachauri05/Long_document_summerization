@@ -40,19 +40,23 @@ def summarize_document(
         raise ValueError(
             "integration must be 'support' or 'replace'"
         )
-
+    print("Entered summarize_document()")
     chunks = chunk_text(
         document,
-        max_words=75
+        max_words=300
     )
-
+    print(f"Number of chunks: {len(chunks)}")
     summaries = []
 
-    for chunk in chunks:
+    for i, chunk in enumerate(chunks, start=1):
+        print(f"Summarizing chunk {i}/{len(chunks)}")
+
         summaries.append(
             summarize_chunk(chunk)
-        )
+    )
+    print("Chunk summarization complete")
 
+    print("Starting hierarchical merge...")
     return hierarchical_merge(
         summaries=summaries,
         original_document=document,

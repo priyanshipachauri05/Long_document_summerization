@@ -90,7 +90,8 @@ def merge_group(
         group,
         method,
         integration,
-        contexts=None
+        contexts=None,
+        max_words=300
 ):
 
     summaries = "\n".join(group)
@@ -112,6 +113,7 @@ of a document:
 Merge the given summaries into one
 single summary containing all key
 information.
+The merged summary must be at most {max_words} words.
 
 Do not mention words like
 "document" or "summary".
@@ -184,6 +186,10 @@ or
 
     else:
         raise ValueError("Invalid integration type.")
+    print("\n========== MERGE DEBUG ==========")
+    print(f"Number of summaries: {len(group)}")
+    print(f"Prompt length (words): {len(prompt.split())}")
+    print("===============================\n")
 
     return call_llm(prompt)
 

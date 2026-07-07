@@ -1,7 +1,7 @@
 import json
 import os
 from google import genai
-from evaluation.prisma_prompts import (
+from src.evaluation.prisma_prompts import (
     FACT_EXTRACTION_PROMPT,
     BATCH_ENTAILMENT_PROMPT,
 )
@@ -148,3 +148,6 @@ class PRISMAEvaluator:
             "fact_recall": round(recall, 4),
             "prisma_score": round(prisma, 4)
         }
+    
+
+    

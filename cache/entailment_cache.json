@@ -1,0 +1,18 @@
+{
+    "{\"generated\": [\"Alice drove a car.\", \"The car was red.\", \"Alice drove yesterday afternoon.\", \"Alice listened to music.\", \"Alice listened to music while she drove.\", \"Alice listened to music yesterday afternoon.\"], \"reference\": [\"Alice drove a car.\", \"The car belongs to Alice.\", \"Alice drove to Boston.\", \"Alice drove yesterday afternoon.\", \"Alice listened to music.\", \"Alice listened to music while driving.\"]}": [
+        true,
+        false,
+        true,
+        true,
+        true,
+        true
+    ],
+    "{\"generated\": [\"Alice drove a car.\", \"The car belongs to Alice.\", \"Alice drove to Boston.\", \"Alice drove yesterday afternoon.\", \"Alice listened to music.\", \"Alice listened to music while driving.\"], \"reference\": [\"Alice drove a car.\", \"The car was red.\", \"Alice drove yesterday afternoon.\", \"Alice listened to music.\", \"Alice listened to music while she drove.\", \"Alice listened to music yesterday afternoon.\"]}": [
+        true,
+        false,
+        false,
+        true,
+        true,
+        true
+    ]
+}
