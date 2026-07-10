@@ -57,6 +57,8 @@ def summarize_document(
     print("Chunk summarization complete")
 
     print("Starting hierarchical merge...")
+    print(method)
+    print(integration)
     return hierarchical_merge(
         summaries=summaries,
         original_document=document,

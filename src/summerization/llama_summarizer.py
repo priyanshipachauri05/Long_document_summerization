@@ -2,6 +2,8 @@ from groq import Groq
 from dotenv import load_dotenv
 from pathlib import Path
 import os
+import time
+from groq import RateLimitError
 
 # ==========================================
 # LOAD ENVIRONMENT VARIABLES
@@ -28,18 +30,21 @@ client = Groq(api_key=api_key)
 
 def call_llm(prompt):
 
-    response = client.chat.completions.create(
-        model="llama-3.1-8b-instant",
-        messages=[
-            {
-                "role": "user",
-                "content": prompt
-            }
-        ],
-        temperature=0
-    )
+    while True:
+        try:
+            response = client.chat.completions.create(
+                model="llama-3.1-8b-instant",
+                messages=[
+                    {"role": "user", "content": prompt}
+                ],
+                temperature=0.2,
+            )
 
-    return response.choices[0].message.content.strip()
+            return response.choices[0].message.content
+
+        except RateLimitError:
+            print("Rate limit hit. Waiting 1 second...")
+            time.sleep(1)
 
 
 # ==========================================

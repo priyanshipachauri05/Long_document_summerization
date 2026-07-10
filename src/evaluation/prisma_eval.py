@@ -74,7 +74,40 @@ class PRISMAEvaluator:
             )
         )
 
-        data: FactExtractionResponse = response.parsed
+        import time
+
+        facts = None
+
+        for attempt in range(3):
+
+            try:
+                response = self.client.models.generate_content(
+                    model="gemini-2.5-flash",
+                    contents=prompt,
+                    config=types.GenerateContentConfig(
+                        response_mime_type="application/json",
+                        response_schema=FactExtractionResponse,
+                        temperature=0.1
+                    )
+                )
+
+                data = response.parsed
+
+                if data is not None and data.facts is not None:
+                    facts = self.filter_facts(data.facts)
+                    break
+
+                print(f"Invalid fact extraction. Retry {attempt+1}/3")
+
+            except Exception as e:
+                print(e)
+
+            time.sleep(2)
+
+        if facts is None:
+            print("Fact extraction failed after 3 retries.")
+            return []
+
         facts = self.filter_facts(data.facts)
         
         fact_cache[text_hash] = facts
@@ -116,41 +149,88 @@ class PRISMAEvaluator:
                 seen.add(fact)
         return unique
 
-    def batch_entailment(self, generated_facts: List[str], reference_facts: List[str]) -> List[bool]:
+    def batch_entailment(
+    self,
+    generated_facts: List[str],
+    reference_facts: List[str]
+) -> List[bool]:
+
+        import time
+
         if not generated_facts:
             return []
-            
+
+        # ---------------- Cache ----------------
         entailment_cache = self.load_cache(self.entailment_cache_file)
-        cache_data = {"generated": sorted(generated_facts), "reference": sorted(reference_facts)}
+
+        cache_data = {
+            "generated": sorted(generated_facts),
+            "reference": sorted(reference_facts)
+        }
+
         cache_key = self._hash_key(cache_data)
 
         if cache_key in entailment_cache:
             print("✓ Using cached entailment tracking")
             return entailment_cache[cache_key]
 
+        # ---------------- Prompt ----------------
         prompt = BATCH_ENTAILMENT_PROMPT.format(
-            generated="\n".join(f"{i+1}. {fact}" for i, fact in enumerate(generated_facts)),
+            generated="\n".join(
+                f"{i+1}. {fact}" for i, fact in enumerate(generated_facts)
+            ),
             reference="\n".join(reference_facts)
         )
 
-        response = self.client.models.generate_content(
-            model="gemini-2.5-flash",
-            contents=prompt,
-            config=types.GenerateContentConfig(
-                response_mime_type="application/json",
-                response_schema=EntailmentResponse,
-                temperature=0.0
-            )
+        # ---------------- Retry Loop ----------------
+        results = None
+
+        for attempt in range(3):
+
+            try:
+
+                response = self.client.models.generate_content(
+                    model="gemini-2.5-flash",
+                    contents=prompt,
+                    config=types.GenerateContentConfig(
+                        response_mime_type="application/json",
+                        response_schema=EntailmentResponse,
+                        temperature=0.0
+                    )
+                )
+
+                data = response.parsed
+
+                if data is not None and data.results is not None:
+                    results = data.results
+                    break
+
+                print(f"Gemini returned invalid JSON. Retry {attempt+1}/3")
+
+            except Exception as e:
+                print(f"Gemini API error: {e}")
+                print(f"Retry {attempt+1}/3")
+
+            time.sleep(2)
+
+        # ---------------- Fallback ----------------
+        if results is None:
+            print("Failed after 3 retries. Using fallback values.")
+            return [False] * len(generated_facts)
+
+        # ---------------- Fix Length ----------------
+        if len(results) != len(generated_facts):
+            results = (
+                results + [False] * len(generated_facts)
+            )[:len(generated_facts)]
+
+        # ---------------- Cache ----------------
+        entailment_cache[cache_key] = results
+        self.save_cache(
+            self.entailment_cache_file,
+            entailment_cache
         )
 
-        data: EntailmentResponse = response.parsed
-        results = data.results
-
-        if len(results) != len(generated_facts):
-            results = (results + [False] * len(generated_facts))[:len(generated_facts)]
-
-        entailment_cache[cache_key] = results
-        self.save_cache(self.entailment_cache_file, entailment_cache)
         return results
 
     def compute_precision(self, generated_facts: List[str], reference_facts: List[str]) -> float:
